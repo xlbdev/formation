@@ -55,29 +55,6 @@ _show_spinner() {
     local i=0
     local frameText=""
 
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    # Note: In order for the Travis CI site to display
-    # things correctly, it needs special treatment, hence,
-    # the "is Travis CI?" checks.
-
-    if [ "$TRAVIS" != "true" ]; then
-
-        # Provide more space so that the text hopefully
-        # doesn't reach the bottom line of the terminal window.
-        #
-        # This is a workaround for escape sequences not tracking
-        # the buffer position (accounting for scrolling).
-        #
-        # See also: https://unix.stackexchange.com/a/278888
-
-        printf "\n\n\n"
-        tput cuu 3
-
-        tput sc
-
-    fi
-
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     # Display spinner while the commands are being executed.
@@ -86,28 +63,14 @@ _show_spinner() {
 
         frameText=" [${FRAMES:i++%NUMBER_OR_FRAMES:1}] $MSG"
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
         # Print frame text.
-
-        if [ "$TRAVIS" != "true" ]; then
-            printf "%s\n" "$frameText"
-        else
             printf "%s" "$frameText"
-        fi
 
         sleep 0.2
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
         # Clear frame text.
-
-        if [ "$TRAVIS" != "true" ]; then
-            tput rc
-        else
-            printf "\r"
-        fi
-
+         printf "\r"
+         
     done
 
 }
@@ -270,7 +233,7 @@ print_warning() {
 }
 
 print_error() {
-    print_in_red "  [𝘅] $1 $2\n"
+    print_in_red "  [🆇] $1 $2\n"
 }
 
 ###############################################################################
