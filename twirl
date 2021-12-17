@@ -297,6 +297,26 @@ check_internet_connection() {
     fi
 }
 
+check_software_update () {
+    if softwareupdate -l | grep found &>/dev/null; then
+        print_warning "New updates available";
+        if ask "Review updates?" Y; then
+          printf "\n"
+		  softwareupdate -l
+          printf "\n"
+           if ask "Install updates?" Y; then
+		     printf "/n"
+             softwareupdate -ia --verbose
+             printf "\n"
+           fi 
+        fi
+        
+    else
+        print_success "Everything is up to date";
+    fi
+}
+
+
 ###############################################################################
 # Execution
 ###############################################################################
@@ -383,6 +403,10 @@ symlink_dotfiles() {
     _link_file "$src" "$dst"
   done
 }
+
+
+
+
 
 ###############################################################################
 # Prompts

@@ -33,7 +33,7 @@ fi
 check_bash_version
 
 ###############################################################################
-# Follow the constitution          http://patorjk.com/software/taag/ 
+# Follow the constitution      http://patorjk.com/software/taag/ (ansi regular)
 ###############################################################################
 
 printf "
@@ -65,6 +65,17 @@ check_internet_connection
 
 	if ask "Would you like to check the network quality" N; then
 		networkQuality
+	else
+		print_success_muted "Fine - moving on.";
+	fi
+
+###############################################################################
+# CHECK: Softwareupdates
+###############################################################################
+chapter "Checking for system software updates…"
+
+if ask "Would you like to check for system software updates?" N; then
+		check_software_update
 	else
 		print_success_muted "Fine - moving on.";
 	fi
