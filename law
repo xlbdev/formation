@@ -58,9 +58,20 @@ printf "
 "
 
 ###############################################################################
-# CHECK: Internet
+# PROMPT: Password
 ###############################################################################
-chapter "Checking internet connection…"
+#chapter "Caching password…"
+#ask_for_sudo
+
+###############################################################################
+# CHECK: Internet, Updates, Filevault, Command line tools
+###############################################################################
+chapter "Checking basic configuration"
+
+# -----------------------------------------------------------------------------
+# Internet connection and quality
+# -----------------------------------------------------------------------------
+step "Checking internet connection…"
 check_internet_connection
 
 	if ask "Would you like to check the network quality" N; then
@@ -69,33 +80,7 @@ check_internet_connection
 		print_success_muted "Fine - moving on.";
 	fi
 
-###############################################################################
-# CHECK: Softwareupdates
-###############################################################################
-chapter "Checking for system software updates…"
-
-if ask "Would you like to check for system software updates?" N; then
-		check_software_update
-	else
-		print_success_muted "Fine - moving on.";
-	fi
-
-###############################################################################
-# PROMPT: Password
-###############################################################################
-#chapter "Caching password…"
-#ask_for_sudo
-
-###############################################################################
-# PROMPT: SSH Key
-###############################################################################
-#chapter 'Checking for SSH key…'
-#ssh_key_setup
-
-###############################################################################
-# INSTALL: Dependencies
-###############################################################################
-chapter "Installing Dependencies…"
+step "Check command line tools"
 
 # -----------------------------------------------------------------------------
 # XCode
@@ -109,9 +94,47 @@ else
 	print_success "Xcode installed!"
 fi
 
-if [ ! -d "$HOME/.bin/" ]; then
-	mkdir "$HOME/.bin"
-fi
+#if [ ! -d "$HOME/.bin/" ]; then
+#	mkdir "$HOME/.bin"
+#fi
+
+# -----------------------------------------------------------------------------
+# System updates
+# -----------------------------------------------------------------------------
+step "Checking for system software updates…"
+
+if ask "Would you like to check for system software updates?" N; then
+		check_software_update
+	else
+		print_success_muted "Fine - moving on.";
+	fi
+
+
+
+###############################################################################
+# PROMPT: SSH Key
+###############################################################################
+#chapter 'Checking for SSH key…'
+#ssh_key_setup
+
+# -----------------------------------------------------------------------------
+# Filevault should be active
+# -----------------------------------------------------------------------------
+
+step "Check FileVault Status"
+check_filevault_status
+
+# -----------------------------------------------------------------------------
+# Computer Name
+# -----------------------------------------------------------------------------
+
+step "Computer Name"
+check_computer_name
+
+###############################################################################
+# INSTALL: Dependencies
+###############################################################################
+
 
 # -----------------------------------------------------------------------------
 # Bash-it
@@ -145,8 +168,9 @@ fi
 # -----------------------------------------------------------------------------
 # Homebrew
 # -----------------------------------------------------------------------------
+step "Check for Homebrew"
 if ! [ -x "$(command -v brew)" ]; then
-	step "Installing Homebrew…"
+    echo_install "Installing Homebrew" 
 	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"	
 
 
@@ -177,10 +201,12 @@ fi
 if [ -e $cwd/swag/brews ]; then
 	chapter "Installing Homebrew formulae…"
 
-	for brew in $(<$cwd/swag/brews); do
-		install_brews $brew
+	for brew in $(grep -E -ve '^[[:space:]]*$|^#*' $cwd/swag/brews); do
+	    install_brews $brew
 	done
 fi
+exit 0
+
 
 ###############################################################################
 # UPDATE: Homebrew
