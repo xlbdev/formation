@@ -166,9 +166,9 @@ check_computer_name
 # fi
 
 # -----------------------------------------------------------------------------
-# Homebrew
+# Homebrew setup
 # -----------------------------------------------------------------------------
-step "Check for Homebrew"
+step "Check if Homebrew is installed and ready"
 if ! [ -x "$(command -v brew)" ]; then
     echo_install "Installing Homebrew" 
 	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"	
@@ -180,55 +180,68 @@ if ! [ -x "$(command -v brew)" ]; then
 	export PATH="/usr/local/bin:$PATH"
 	print_success "Homebrew installed!"
 else
-	print_success_muted "Homebrew already installed. Skipping."
+	print_success_muted "Homebrew already installed. "
 fi
 
-step "Checking if Homebrew is ready"
 if $(brew doctor > /dev/null 2>&1); then
-    print_success "Ready to roll!"
+    print_success "Homebrew Doctor check passed. "
 else	
-    print_error "The doctor isn't happy. Please fix the issues and start over.\n \n"
+    print_error "Homebrew doctor isn't happy. Please fix the issues and start over.\n \n"
 	brew doctor
 	print_error "Please fix the issues and start over."
 	exit 1
 fi
 
+step "Looking for Brew updates"
+brew update > /dev/null && print_success "Repository updated"
+
 
 
 ###############################################################################
-# INSTALL: brews
+# INSTALL APPS
 ###############################################################################
+
+chapter "Installing Apps"
+
+
 if [ -e $cwd/swag/brews ]; then
-	chapter "Installing Homebrew formulae…"
+	step "Installing Homebrew formulae:"
 
 	for brew in $(grep -E -ve '^[[:space:]]*$|^#*' $cwd/swag/brews); do
 	    install_brews $brew
 	done
 fi
-exit 0
 
 
-###############################################################################
-# UPDATE: Homebrew
-###############################################################################
-chapter "Updating Homebrew formulae…"
-brew update
+
 
 ###############################################################################
 # INSTALL: casks
 ###############################################################################
 if [ -e $cwd/swag/casks ]; then
-	chapter "Installing apps via Homebrew…"
+	step "Installing Homebrew casks:"
 
-	for cask in $(<$cwd/swag/casks); do
-	    install_application_via_brew $cask
+	for cask in $(grep -E -ve '^[[:space:]]*$|^#*' $cwd/swag/casks); do
+	    install_casks $cask
 	done
 fi
+exit 0
+
+
+# -----------------------------------------------------------------------------
+# Homebrew updates and cleaning up
+# -----------------------------------------------------------------------------
+
+step "Updating Homebrew installations and clean up"
+brew upgrade
+brew cleanup
+
+exit 0
 
 ###############################################################################
 # INSTALL: Mac App Store Apps
 ###############################################################################
-chapter "Installing apps from App Store…"
+step "Installing apps from App Store…"
 if [ -x mas ]; then
 
 	print_warning "Please install mas-cli first: brew mas. Skipping."

@@ -298,13 +298,12 @@ check_internet_connection() {
 }
 
 check_software_update () {
-    if softwareupdate -l | grep found &>/dev/null; then
+    su_status=$(softwareupdate -l 2>&1)
+    if grep found <<<$su_status &>/dev/null; then
         print_warning "New updates available";
         if ask "Review updates?" Y; then
-          printf "\n"
-		  softwareupdate -l
-          printf "\n"
-           if ask "Install updates?" Y; then
+          printf "\n $su_status \n"
+           if ask "Install all updates?" Y; then
 		     printf "/n"
              softwareupdate -ia --verbose
              printf "\n"
@@ -316,6 +315,35 @@ check_software_update () {
     fi
 }
 
+function check_filevault_status() {
+	fv_status=$(fdesetup status)
+
+	if [ "$fv_status" == "FileVault is On." ]; then
+		print_success "FileVault is On."
+	else
+		print_warning "FileVault is OFF"
+        if ask "Enable FileVault" Y; then
+          fdesetup enable
+     	fi
+    fi     
+}
+
+function check_computer_name() {
+	compname=$(scutil --get ComputerName)
+
+	if ask "This machine is called $compname. Rename?" N; then
+      read -er -p "      Please enter the new machine name: "  compname
+      # Bonjour name ending in .local
+      scutil --set LocalHostName $compname   
+      # Friendly name shown in System Preferences > Sharing
+      scutil --set ComputerName $compname 
+      # The name recognized by the hostname command
+      scutil --set HostName $compname 
+      #Netbios
+      defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$HOST_NAME"
+      print_success "My name is $compname"
+    fi     
+}
 
 ###############################################################################
 # Execution
@@ -532,24 +560,38 @@ gem_install_or_update() {
     fi
 }
 
+
 install_brews() {
-    if test ! $(brew list | grep $brew); then
-        echo_install "Installing $brew"
-		brew install $brew >/dev/null
-		print_in_green "${bold}✓ installed!${normal}\n"
-	else
-		print_success_muted "$brew already installed. Skipped."
-    fi
+    binfo=$(brew info $brew 2>&1) &&
+      if [[ $(echo $binfo | grep "Not installed") ]]; then
+          echo_install "Installing $brew ..."
+		  brew install $brew >/dev/null
+		  print_in_green "${bold}✓ installed!${normal}\n"  
+      else  
+          if [[ $(echo $binfo | grep "Poured") ]]; then
+	  	     print_success_muted "$brew already installed. Skipped." 
+          fi 
+       fi      
+    if [[ $(echo $binfo | grep "No available formula") ]]; then
+         print_warning "$brew does not exist"    
+    fi     
 }
 
-install_application_via_brew() {
-    if [[ ! $(brew list | grep $cask) ]]; then
-        echo_install "Installing $cask"
-        brew install --cask  $cask --appdir=/Applications >/dev/null
-        print_in_green "${bold}✓ installed!${normal}\n"
-    else
-    	print_success_muted "$cask already installed. Skipped."
-    fi
+
+install_casks() {
+      cinfo=$(brew info $cask 2>&1) &&
+      if [[ $(echo $cinfo | grep "Not installed") ]]; then
+          echo_install "Installing $cask ..."
+		  brew install --cask $cask >/dev/null
+		  print_in_green "${bold}✓ installed!${normal}\n"  
+      else  
+          if [[ $(echo $cinfo | grep "Caskroom") ]]; then
+	  	     print_success_muted "$cask already installed. Skipped." 
+          fi 
+       fi      
+    if [[ $(echo $cinfo | grep "No available formula") ]]; then
+         print_warning "$brew does not exist"    
+    fi  
 }
 
 install_application_via_app_store() {
@@ -626,13 +668,12 @@ label_green() {
 
 e_lemon_ated() {
     printf "
-  ${bold}Congrats! You're in formation!${normal} 🍋
 
   ╭────────────────────────────────────────────────────╮
-  │ Thanks for using Formation!                        │
-  │ If you liked it, then you should put a star on it! │
+  │                      │
+  │ ${bold}Congrats! Your are following the constitution!${normal} │
   │                                                    │
-  │ https://github.com/minamarkham/formation           │
+  │          │
   ╰────────────────────────────────────────────────────╯
 
 "
